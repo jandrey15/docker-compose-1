@@ -1,0 +1,51 @@
+<script>
+  if (localStorage.tokenElecciones != undefined) {
+    window.location.replace('/home')
+  }
+</script>
+<section id="login">
+  <form id="formLogin" method="post">
+    <input type="email" name="email" placeholder="Tu Email">
+    <br>
+    <br>
+    <input type="password" name="password" placeholder="Tu Contraseña">
+    <br>
+    <br>
+    <input type="submit" value="Login">
+  </form>
+</section>
+
+<script>
+  const formLogin = document.querySelector('#formLogin');
+
+  formLogin.addEventListener('submit', event => {
+    event.preventDefault();
+
+    const formData = new FormData(formLogin);
+    console.log('Esta es la data -> ' + formData);
+
+    fetch('/api/signin', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: formData.get('email'),
+        password: formData.get('password')
+      })
+    })
+      .then(function (res) {
+        return res.json();
+      })
+      .then(data => {
+        // Guardamos el token en localStorage
+        localStorage.setItem('tokenElecciones', `${data.token}`);
+        console.log(`Logeando -> ${data.token}`)
+        window.location.replace('/home')
+      })
+      .catch(err => {
+        console.log(`Algo salio mal -> ${err}`);
+      })
+  });
+</script>

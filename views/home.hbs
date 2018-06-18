@@ -1,0 +1,129 @@
+<script>
+  if (localStorage.tokenElecciones == undefined) {
+    window.location.replace('/login')
+  }
+</script>
+<section id="home">
+  <h2>Load file xml</h2>
+  <form id="loadFile" ref='uploadForm' encType="multipart/form-data" onchange="fileValidation()">
+    <label for="file">Seleccione un archivo xml</label>
+    <input id="file" type="file" name="fileXml" required>
+    <select name="option" id="optionFile">
+      <option value="Departamental">Departamental</option>
+      <option value="Nacional">Nacional</option>
+    </select>
+    <input id="btnLoad" type="submit" value="Load">
+  </form>
+  <h3 id="message"></h3>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const href = window.location.href;
+  // url = 'https://elecciones.laopinion.com.co';
+  let url = 'http://192.168.99.100:8080';
+
+  /*if (href != 'https://elecciones.laopinion.com.co/home') {
+    url = 'http://localhost:8080';
+  }*/
+
+  //const socket = io.connect();
+  const socket = io.connect(url, { 'forceNew': true });
+
+  const myHeaders = new Headers({
+    'authorization': 'bearer ' + localStorage.tokenElecciones
+  });
+  // myHeaders.append('authorization', 'bearer ' + localStorage.tokenElecciones);
+
+  const $formFile = document.getElementById('loadFile');
+
+  $formFile.addEventListener('submit', loadFile)
+
+  function loadFile(event) {
+    event.preventDefault();
+
+    const formData = new FormData(this);
+    //console.log(formData.get('fileXml'))
+
+    fetch('/api/loadfile', {
+      method: 'POST',
+      headers: myHeaders,
+      body: formData
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status == 200) {
+          socket.emit('load-file');
+          console.log(data.message)
+          $formFile.reset();
+          const $message = document.getElementById('message');
+          // console.log('algo salio mal' + data.message)
+          $message.style.display = 'block'
+          $message.style.opacity = 1
+          setTimeout(() => {
+            fade($message);
+          }, 3000);
+          $message
+            .textContent = data.message
+        } else {
+          const $message = document.getElementById('message');
+          // console.log('algo salio mal' + data.message)
+          $message.style.display = 'block'
+          $message.style.opacity = 1
+          setTimeout(() => {
+            fade($message);
+          }, 3000);
+          $message
+            .textContent = 'Algo salio mal intentelo mas tarde.'
+        }
+      })
+      .catch(err => {
+        // console.log(`Algo salio mal -> ${err}`);
+        const $message = document.getElementById('message');
+        // console.log('algo salio mal' + data.message)
+        $message.style.display = 'block'
+        $message.style.opacity = 1
+        setTimeout(() => {
+          fade($message);
+        }, 3000);
+        $message
+          .textContent = 'Algo salio mal intentelo mas tarde.'
+      })
+  }
+
+  function fileValidation() {
+    let fileInput = document.getElementById('file');
+    const filePath = fileInput.value;
+    const allowedExtensions = /(.xml)$/i;
+    // console.log(filePath)
+    if (filePath.length > 0) {
+      if (!allowedExtensions.exec(filePath)) {
+        // alert('Please upload file having extensions .xml');
+        const $message = document.getElementById('message');
+        setTimeout(() => {
+          fade($message);
+        }, 3000);
+        $message
+          .textContent = 'Por favor el archivo tiene que tener la extension .xml'
+        fileInput.value = '';
+        return false;
+      }
+    }
+    return false;
+  }
+
+  function fade(element) {
+    let op = 1;  // initial opacity
+    let timer = setInterval(function () {
+      // console.log(op)
+      if (op <= 0.1) {
+        clearInterval(timer);
+        element.style.display = 'none';
+      }
+      element.style.opacity = op;
+      element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+      op -= op * 0.1;
+    }, 50);
+  }
+
+</script>
